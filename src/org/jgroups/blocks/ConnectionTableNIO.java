@@ -1005,7 +1005,7 @@ public class ConnectionTableNIO extends BasicConnectionTable implements Runnable
          return sock_ch;
       }
 
-      void closeSocket()
+      synchronized void closeSocket()
       {
 
          if (sock_ch != null)
