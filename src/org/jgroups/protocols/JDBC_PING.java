@@ -6,6 +6,7 @@ import org.jgroups.annotations.Property;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -127,11 +128,7 @@ public class JDBC_PING extends FILE_PING {
                     }
                 }
             } finally {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    log.error("Error closing connection", e);
-                }
+                closeConnection(connection);
             }
         }
     }
@@ -168,7 +165,7 @@ public class JDBC_PING extends FILE_PING {
         }
         else {
             try {
-                return dataSourceFromJNDI.getConnection();
+                return ensureAutoCommit(dataSourceFromJNDI.getConnection());
             } catch (SQLException e) {
                 log.error("Could not open connection to database", e);
                 return null;
@@ -317,12 +314,27 @@ public class JDBC_PING extends FILE_PING {
     
     protected void closeConnection(final Connection connection) {
         try {
+            ensureAutoCommit(connection);
             connection.close();
         } catch (SQLException e) {
             log.error("Error closing connection to JDBC_PING database", e);
         }
     }
     
+    private Connection ensureAutoCommit(Connection connection) {
+        try {
+            connection.setAutoCommit(true);
+        } catch (SQLException e) {
+            if (log.isDebugEnabled()) {
+                log.warn("Unable to set autocommit on connection", e);
+            } else {
+                log.warn("Unable to set autocommit on connection. Cause: " + e.getMessage());
+            }
+        }
+        
+        return connection;
+    }
+
     protected DataSource getDataSourceFromJNDI(String name) {
         final DataSource dataSource;
         InitialContext ctx = null;
