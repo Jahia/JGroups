@@ -115,18 +115,8 @@ public class JDBC_PING extends FILE_PING {
                     PreparedStatement preparedStatement =
                         connection.prepareStatement(initialize_sql);
                     preparedStatement.execute();
-                    if (!connection.getAutoCommit()) {
-                        connection.commit();
-                    }
                     log.debug("Table created for JDBC_PING Discovery Protocol");
                 } catch (SQLException e) {
-                    try {
-                        if (!connection.getAutoCommit()) {
-                            connection.rollback();;
-                        }
-                    } catch (SQLException se) {
-                        log.warn("Unable to perform rollback", se);
-                    }
                     if (log.isDebugEnabled()) {
                         log.debug("Could not execute initialize_sql statement; not necessarily an error.", e);
                     }
@@ -208,19 +198,8 @@ public class JDBC_PING extends FILE_PING {
         final Connection connection = getConnection();
         if (connection != null) {
             try {
-                List<PingData> readAll = readAll(connection, clustername);
-                if (!connection.getAutoCommit()) {
-                    connection.commit();
-                }
-                return readAll;
+                return readAll(connection, clustername);
             } catch (SQLException e) {
-                try {
-                    if (!connection.getAutoCommit()) {
-                        connection.rollback();;
-                    }
-                } catch (SQLException se) {
-                    log.warn("Unable to perform rollback", se);
-                }
                 log.error("Error reading JDBC_PING table", e);
                 return Collections.emptyList();
             } finally {
@@ -276,17 +255,7 @@ public class JDBC_PING extends FILE_PING {
             try {
                 delete(connection, clustername, ownAddress);
                 insert(connection, data, clustername, ownAddress);
-                if (!connection.getAutoCommit()) {
-                    connection.commit();
-                }
             } catch (SQLException e) {
-                try {
-                    if (!connection.getAutoCommit()) {
-                        connection.rollback();;
-                    }
-                } catch(SQLException se) {
-                    log.warn("Error updating JDBC_PING table", e);
-                }
                 log.error("Error updating JDBC_PING table", e);
             } finally {
                 closeConnection(connection);
@@ -305,16 +274,8 @@ public class JDBC_PING extends FILE_PING {
             ps.setString(2, clustername);
             ps.setBytes(3, serializedPingData);
             ps.executeUpdate();
-            if (!connection.getAutoCommit()) {
-                connection.commit();
-            }
             if (log.isDebugEnabled())
                 log.debug("Registered " + address + " for clustername " + clustername + " into database.");
-        } catch (SQLException e) {
-            if (!connection.getAutoCommit()) {
-                connection.rollback();
-            }
-            throw e;
         } finally {
             ps.close();
         }
@@ -338,14 +299,8 @@ public class JDBC_PING extends FILE_PING {
         if (connection != null) {
             try {
                 delete(connection, clustername, addressToDelete);
-                if (!connection.getAutoCommit()) {
-                    connection.commit();
-                }
             } catch (SQLException e) {
                 log.error("Error updating JDBC_PING table", e);
-                if (!connection.getAutoCommit()) {
-                    connection.rollback();
-                }
             } finally {
                 closeConnection(connection);
             }
